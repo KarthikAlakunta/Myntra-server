@@ -136,12 +136,19 @@ server.post("/decrese", Middleware);
 
 server.delete("/:id", async (req, res) => {
   const { id } = req.params;
-  const prod = await Cart.findById({ _id: id });
-  if (prod) {
+  console.log(id);
+  try {
+    const prod = await Cart.findOne({ _id: id });
+    const product = await Product.findOne({ _id: prod.product });
+    let qty = product.quantity + 1;
     let Delete = await Cart.deleteOne({ _id: id });
+    let update = await Product.updateOne(
+      { _id: product },
+      { $set: { quantity: qty } }
+    );
     res.status(200).send(`Item deleted successfully`);
-  } else {
-    res.status(401).send("Id Not found");
+  } catch (e) {
+    res.status(401).send(e.message);
   }
 });
 
