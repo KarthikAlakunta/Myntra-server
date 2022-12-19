@@ -94,8 +94,8 @@ server.delete("/placeorder", async (req, res) => {
   try {
     let Delete = await Cart.deleteMany({ token });
     console.log(Delete);
-    if(Delete.deletedCount>=1) return res.status(201).send("Products placed successfully");
-    return res.status(201).send("Please add atleast one product");
+    if(Delete.deletedCount>=1) return res.status(200).send("Products placed successfully");
+    return res.status(404).send("Please add atleast one product");
     
   } catch (e) {
     return res.status(404).send(e.message);
