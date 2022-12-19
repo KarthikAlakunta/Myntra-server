@@ -140,7 +140,7 @@ server.delete("/:id", async (req, res) => {
   try {
     const prod = await Cart.findOne({ _id: id });
     const product = await Product.findOne({ _id: prod.product });
-    let qty = product.quantity + 1;
+    let qty = product.quantity + prod.qty;
     let Delete = await Cart.deleteOne({ _id: id });
     let update = await Product.updateOne(
       { _id: product },
