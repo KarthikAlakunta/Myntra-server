@@ -3,6 +3,7 @@ const Cart = require("./cart.model.js");
 const Product = require("../Products/product.model");
 const server = express();
 const cors = require("cors");
+const Admin = require("../admin/admin.model.js");
 server.use(cors());
 const Authmiddleware = async (req, res, next) => {
   let { token } = req.headers;
@@ -89,12 +90,24 @@ server.get("/products", async (req, res) => {
   }
 });
 
-server.delete("/placeorder", async (req, res) => {
+server.post("/placeorder", async (req, res) => {
   const { token } = req.headers;
+  
+  const {products,amount} = req.body;
   try {
+     let admin = await Admin.findOne({ _id:"63a8a1cc44a1b67e7d517285"})
+     console.log(products,amount,token)
     let Delete = await Cart.deleteMany({ token });
+    
     console.log(Delete);
-    res.status(201).send(`Products Placed Successfully`);
+    if(Delete.deletedCount>=1) {
+      let update = await Admin.updateOne(
+        { _id: "63a8a1cc44a1b67e7d517285" },
+        { $set: {totalTransactions:admin.totalTransactions+1,totalProducts:admin.totalProducts+products,totalAmount:admin.totalAmount+amount} }
+      );
+      return res.status(201).send("Order Placed successfully")
+    }
+    return res.status(201).send("Please add atleast one product");
   } catch (e) {
     return res.status(404).send(e.message);
   }
@@ -109,7 +122,7 @@ const Middleware = async (req, res, next) => {
     let prod = await Product.findOne({ _id: product });
     let qty = prod.quantity + 1;
     if (cart.qty > 1) {
-      let cartQty = cart.qty-1;
+      let cartQty = cart.qty - 1;
       let update = await Product.updateOne(
         { _id: product },
         { $set: { quantity: qty } }
@@ -119,12 +132,12 @@ const Middleware = async (req, res, next) => {
         { $set: { qty: cartQty } }
       );
       return res.status(201).send("Quatity Decresed Success");
-    }else{
+    } else {
       let update = await Product.updateOne(
         { _id: product },
         { $set: { quantity: qty } }
       );
-      let Delete = await Cart.deleteOne({_id:cart._id} );
+      let Delete = await Cart.deleteOne({ _id: cart._id });
       return res.status(200).send("Product removed from cart");
     }
   } catch (err) {
@@ -140,7 +153,7 @@ server.delete("/:id", async (req, res) => {
   try {
     const prod = await Cart.findOne({ _id: id });
     const product = await Product.findOne({ _id: prod.product });
-    let qty = product.quantity + 1;
+    let qty = product.quantity + prod.qty;
     let Delete = await Cart.deleteOne({ _id: id });
     let update = await Product.updateOne(
       { _id: product },
